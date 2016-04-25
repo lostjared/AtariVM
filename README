@@ -1,0 +1,427 @@
+What exactly is this program?
+
+Its a Virtual Machine, NOT a Emulator.. It interprets A  Atari 800 Like Assembly Language
+It contains extra instructions for modern computers
+This is meant to help me learn how to write a interpreter/virtual machine
+So how did this project get started?
+Well its a long story actually, but here goes:
+
+I got a book from my friend a long time ago
+it was called  The Atari Assembler by Don Inman and Kurt Inman
+It was written in 1981 and explains about the atari 400 and 800 (6502 Instructions)
+I wanted to use the language, so I decided to write a interpreter that would
+preform the same tasks as the old assembly language..I always have been interested
+in compilers / interpreters / assemblers, so I thought writing something like this
+would help me Understand. Plus ive always wanted to write a program which interprets a 
+older systems way of operating kind of like a emulator.
+Through doing this:
+Learning the instructions and there opcodes, I began to have a firmer grasp
+on my C and C++ programming .. This language is still very basic but i plan on making it
+into a full virtual machine.. with special instructions that were not avialable back than
+but still keeping the same look and feel of the old assembly language.
+
+What this program contains:
+
+The ability to output debug information in HTML instead of atari machine language
+ so you can look at what the
+assembly code would be translated to, which mnemoics stand for which machine instructions
+etc..
+
+The ability to produce debug output into the stdout so you can see what is going
+on after the program finishes execution.. like what memory locations it changes..
+and the status of the registers and flags
+
+new additions to the language:
+Ability to use a Register as a variable on the instructions
+Interupt Instruction to have the program be able to preform
+special operations via a interupt system call which can point to addresses
+of functions written in C.
+
+
+Why use this program?
+To help understand the foundations of current programming languages
+
+
+--------------------------------------------
+Command Line Arguments:
+
+
+--debug 
+	print debug to the stdout and a html file
+	now this mode should only be used if your applications dosent enter graphics mode
+	because it prints out to the stdout every instruction and the status of the registers
+	if your using a graphics mode application, than use the following 
+
+--debug=gfx
+	this will print the status of the current instruction pointer, and the status
+        of the registers to window its running in
+	this can be usefull for finding bugs
+
+	the first argument is the name of the script file
+	example
+	atari-vm script.ats 
+        or
+        atari-vm script.ats --debug
+        of
+        atari-vm script.ats --debug=gfx
+
+
+Section A:
+--------------------------------------------
+
+
+Notes on the language:
+
+ $ stands for Hexadecimal Address
+ # stands for decimal constant 
+ #$ stands for Hexadecimal Constant
+
+	The Flags
+
+	0 = Negative Result Flag
+	1 = Overflow Flag
+	2 = Expansion Flag (Not Labeled)
+	3 = Break Command Flag
+	4 = Decimal Mode Flag
+	5 = Intereupt disable flag
+	6 = Zero result flag
+	7 = Carry Flag
+	
+
+Instructions:
+
+ADC - Add Memory to Accumulator with Carry
+AND - And Memory to Accumulator with Carry
+ASL - Shift Left One Bit (memory or accumulator)
+BCC - Branch if Carry Flag is clear
+BCS - Branch if Carry Flag is set
+BEQ - Branch on result Zero
+BIT - Test bits in accumulator with memory
+BMI - Branch on result minus
+BNE - Branch if result not zero
+BPL - Branch on result plus
+BRK - Unconditional break
+BVC - Branch on overflow clear
+BVS - Branch on overflow set
+CLC - Clear Carry Flag
+CLD - Clear Decimal Flag
+CLI - Clear Interupt Flag
+CLV - Clear overflow Flag
+CMP - Compare memory and accumulator
+CPX - Compare Memory and Register X
+CPY - Compare Memory and Reigster Y
+DEC - Decrement Memory or accumulator
+DEX - Decrement X Register
+DEY - Decrement Y Register
+EOR - Exculsive Or memory or accumulator
+INC - Incrmeent Memory or accumulator
+* INT - New Instruction: Interupt  ( See Section B )
+INX - Increment register X
+INY - Increment register Y
+JMP - Unconditonal Jump to Code label or address
+JSR - Jump To Subroutine
+LDA - Load accumulator with constant or memory
+* LDM - New Instruction: Load Memory from at X register with constant string
+LDX - Load X register with constant or memory
+LDY - Load Y register with constant or memory
+LSR - Shift right one bit
+NOP - No operation 
+ORA - Or accumulator with constant or memory
+PHA - Push accumulator onto the stack
+PHP - Push proccesscor flags onto the stack
+PLA - Pull (pop) accumulator from the stack
+PLP - Pull (pop) proccesscor flags from the stack
+ROL - Rotate bits one left
+ROR - Rotate bits one right
+RTI - Return from interupt
+RTS - Return from subroutine
+SBC - Subtract memory and borrow from accum
+SEC - Set carry flag
+SED - Set decimal flag
+SEI - Set interupt flag
+STA - Store accumulator in memory
+STX - Store register X in memory
+STY - Store register Y in memory
+TAX - Transfer accumulator to X register
+TAY - Transfer accumulator to Y register
+TSX - Transfer stack pointer to Index X
+TXA - Transfer register X to accumulator
+TYA - Transfer register Y to accumulator
+
+------------------------------------------
+Section B:
+
+New interupts:
+The interupt instruction is followed by a constant
+to stand for what will be called.. It manipulates the X,Y,A registers
+and takes them for information for the specific interupt.
+
+Current Supported New interupts
+
+0x1 
+------
+
+Syntax:
+
+INT #01 - Print to the Screen
+
+- Registers Effected
+X contains the value of where to start to print the data to the stdout
+Y register contains the value of where to stop printing the data to the stdout
+
+
+INT #02 - Read From stdin
+- Registers Effected
+X contains the value of where to start to store data typed to the stdout
+Y contains the value of where the input stops (length of the inputed string)
+
+Examples:
+
+------ Begin Code Snipit ---------------
+
+*= $1000
+ ; simple echo of what the person types
+START ; code label
+LDX #100 ; load X register with constant (#) value 100
+INT $02 ; Interupt (*New*) 0x2 in Hex ($)
+INT $01 ; Interupt (*New*) 0x1 in Hex ($)
+END ; end code label 
+
+----------------------------------------
+
+What this code does is Load the Register X with constant variable 0x100
+than calls the interupt to 0x02 which asks the user for input
+then calls the interupt with value 0x1 which prints to the screen
+
+So how did it know where to stop printing?
+the length of the string was stored in the Y register 
+and the start was stored in the X register
+so when we call INT $01 it automaticly knows where to print 
+the data the user typed..
+
+-----------------------------------------------
+
+INT #03 - Read a decimal value
+- Registers Effected
+X contains the value of the variable read in from the stdin
+
+INT #04 - Read a  Hexadecimal value
+- Registers Effected
+X contains the value of the variable read in from the stdin
+
+
+INT #$13 - Set the Video Mode
+- Registerse Effected
+X contains the value of the video mode being successfully set
+
+INT #$14 - Proccess Events
+- Registers Effected
+X contains 1 if the program is going to end
+- Keyboard Input
+the keyboard offset is 0xFFFF
+so the keys when there pressed are there regular values + 0xFFFF
+notice you must use the full hexadecimal value to grap input from the keyboard
+
+INT #$15 - Update Screen
+- This will swap the current screen with the buffer stored in memory
+so you plot the pixels, than swap the data in memory to the data in video memory
+
+INT #$16 - Plot a Pixel
+- Registers Effected 
+X contains the value of the X cordinate of the screen
+Y contains the value of the Y cordinate of the screen
+A contains the value of the pixel to be set
+
+
+Notice were working in 8 bit mode since the accumulator is 1 byte 
+So $FF is white and $00 is black
+
+
+INT #$17 - Fill Accumulator with Random value
+A Contains a random number 0x0 - 0xFF
+
+INT #$18 - FIll accumulator with random value range
+X contains start of random value range
+Y contains end of random value range
+
+INT #$19 - Test key value from Register Y and put state in Register X
+X contains the value of whether the key is pressed
+Y contains the key to test
+
+INT #$056 - Print String to Video Buffer
+Use the special Instruction LDM  with a string (allows backslash escape character sequence)
+Example:
+
+LDA #100
+LDM "Test\n"
+
+will load Test\n into Memory location 100 (decimal)
+and store the end point of the memory in register Y
+
+$56 has special memory locations that you should be aware of
+$FFE13
+and $FFE14 contain the X,Y cordinate for printing of the screen
+how to use:
+; ------------------------ begin code snipit ------------------------------
+LDA #$0
+LDM "Score:  \n"
+STA $1FE11
+STY $1FE12
+INT #$13
+LDA #$25
+STA $FFFF25
+LDA #255
+STA $FFE13
+LDA #0
+STA $FFE14
+LDA #$FF
+STA $1299
+GAME
+LDA $1FE11
+LDY $1FE12
+INT #$56
+LDA $FFE19
+STA $FFE17
+LDX #$FF
+STX $FFE15
+LDA #270
+LDX #55
+LDY #0
+INT #$58
+JSR DRAWSCREEN
+INT #$15
+; test if escape key was pressed
+LDY #$1B
+INT #$19
+CPY #0
+BNE END
+
+
+; test for now
+JSR ADDSCORE
+
+; fill the screen with black
+LDX #0
+INT #$57
+
+JMP GAME ; loop back up to the start of the game loop
+END
+
+; draw rectangle subroutine
+
+DRAWRECT ; takes X,Y, and accumulator 
+; ------------------------------------------------------------------
+STA $FFFF15
+STX $FFFF11
+STY $FFFF1
+LDA $FFFF25
+ADC #5
+STA $FFFF25
+MAJOR
+LDY $FFFF1
+MINI 
+LDA $FFFF25
+INT #$16
+INY
+LDA $FFFF1
+ADC #16
+STA $FFFF15
+CPY $FFFF15
+BNE MINI
+INX
+LDA $FFFF11
+ADC #32
+STA $FFFF2
+CPX $FFFF2
+BNE MAJOR
+RTS
+
+; draw of the screen subroutine
+
+DRAWSCREEN
+INT #$14
+LDX #5
+LDY #5
+STX $FFFF18
+STY $FFFF19
+
+BIGLOOP
+LOOP
+LDA #$FF
+LDX $FFFF18
+LDY $FFFF19
+JSR DRAWRECT
+LDA $FFFF18
+ADC #36
+STA $FFFF18
+CMP #0
+BNE LOOP
+LDX #5
+STX $FFFF18
+LDA $FFFF19
+ADC #20
+STA $FFFF19
+CMP #0
+BNE BIGLOOP
+RTS
+
+; Add to Score subroutine
+ADDSCORE
+LDA $FFE19
+ADC #1
+STA $FFE19
+RTS
+
+
+; ---------------------------- end code snipit
+
+INT #$057 - System callback
+X contains the Address of the callback
+
+ - Address #$0 is fill screen with black (fast)
+
+- more to be implemented soon or you can add your own callbacks
+
+INT #$058 - Print Decimal Value to the string
+X contains the screen X cordinate 
+Y contains the screen Y cordinate
+Accumulator contains the value
+Memory location: $FFE15 contains the color
+
+Section C:
+-- Tutorial on the Language 
+
+Okay so why would we want to learn a very old assembly langauge?
+To better understand the roots of current programming languages:
+
+First thing you need to learn about the VM's registers and what they do..
+There are 3 general purpose registers, X,Y,and A (Accumulator)
+There is also a special register called the flags register which contains
+information that the instructions act on.. For example
+
+LDA #0
+LOOP ADC #1
+CMP #$FF
+BNE LOOP
+
+In the above statements first we use the LDA mnemoic (or Load Acumulator instruction)
+and give it the operand of $0001 hex or 1 Decimal 
+Then we set a code label and name it loop . than we ADC ( Add with carry to acumulator )
+with the operand of $0001 hex or 1 decimal
+Now heres the important instruction
+CMP $#FF compare the value FF with the value in the acumulator and set bit 0 of 
+the flags register with ethier 1 or 0 depending on the result of the compare
+
+Most of the instructions explain themselves...
+
+But heres some examples anyway: They can be found in the demo scripts folder..
+Im workin on MasterPiece in the Atari Assembly Language, ill release it soon as i finish
+
+
+Notes for PSP
+-------------
+name your font term.mxf (use a MasterX Font)
+name your script default.ats
+place default.ats in the same folder as EBOOT.PBP
+load the game as normal
+
