@@ -214,6 +214,12 @@ int do_interupt(int interupt) {
 
 				surf = SDL_SetVideoMode(480,272,0,0);
 				the_font = SDL_InitFont("t.mxf");
+					
+				if(the_font == 0) {
+					printf("Error loading MXF file.\nPlace t.mxf in directory with executable..\n");
+					exit(1);
+				}
+					
 				joy = SDL_JoystickOpen(0);
 				SDL_JoystickEventState(SDL_ENABLE);
 				SDL_FillRect(surf, 0,0);
