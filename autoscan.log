@@ -1,3 +1,0 @@
-autoscan: warning: missing AC_CHECK_FUNCS([strdup]) wanted by: 
-	code/symtab.c:13
-	code/symtab.c:47
